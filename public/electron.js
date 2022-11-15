@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, globalShortcut } = require("electron");
 const path = require("path");
 
 const createWindow = () => {
@@ -13,10 +13,18 @@ const createWindow = () => {
 
   mainWindow.loadURL("http://localhost:3000");
   mainWindow.webContents.openDevTools();
+  mainWindow.focus();
 };
 
 app.whenReady().then(() => {
   createWindow();
+
+  globalShortcut.register("CommandOrControl+Left", () => {
+    return;
+  });
+  globalShortcut.register("CommandOrControl+Right", () => {
+    return;
+  });
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
