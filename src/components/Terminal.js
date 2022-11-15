@@ -1,15 +1,23 @@
-import React, { useState, useRef, useLayoutEffect } from "react";
+import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import styled from "styled-components";
 
 const Terminal = () => {
   const [lines, setLines] = useState([]);
   const [command, setCommand] = useState("");
+  const [directory, setDirectory] = useState("");
   const [cursorMoves, setCursorMoves] = useState(0);
 
   const refInput = useRef(null);
 
   useLayoutEffect(() => {
     refInput.current.focus();
+  }, []);
+
+  useEffect(() => {
+    window.terminal.incomingData("terminal.incomingData", (data) => {
+      setLines((value) => [...value, data]);
+      setDirectory(data);
+    });
   }, []);
 
   const handleOnFocusSection = () => {
@@ -23,10 +31,6 @@ const Terminal = () => {
     setCommand("");
 
     return value;
-  };
-
-  const convertSpace = (text) => {
-    return text.replaceAll(" ", "\u00A0");
   };
 
   const updateCursor = (key) => {
@@ -72,8 +76,12 @@ const Terminal = () => {
         return setLines([]);
       }
 
-      setLines((lines) => [...lines, value]);
+      window.terminal.keyStroke("terminal.keyStroke", value);
     }
+  };
+
+  const convertSpace = (text) => {
+    return text.replaceAll(" ", "\u00A0");
   };
 
   const handleChangeInput = (event) => {
@@ -86,9 +94,18 @@ const Terminal = () => {
         {lines?.map((value, index) => (
           <LineStyled key={index}>{value}</LineStyled>
         ))}
-        <LineStyled key="command" command input cursorMoves={cursorMoves}>
-          {command}
-        </LineStyled>
+        <InputLine>
+          <InputTextBefore>{directory}</InputTextBefore>
+          <LineStyled
+            key="command"
+            directory
+            command
+            input
+            cursorMoves={cursorMoves}
+          >
+            {command}
+          </LineStyled>
+        </InputLine>
       </ul>
       <input
         ref={refInput}
@@ -135,6 +152,15 @@ const TerminalStyled = styled.div`
     overflow: hidden;
     padding: 0;
   }
+`;
+
+const InputLine = styled.div`
+  display: flex;
+`;
+
+const InputTextBefore = styled.span`
+  color: ${Color.front};
+  left: -15px;
 `;
 
 const LineStyled = styled.li`
