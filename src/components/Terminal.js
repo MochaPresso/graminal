@@ -1,13 +1,17 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import styled from "styled-components";
+import Convert from "ansi-to-html";
+import { sanitize } from "dompurify";
 
 const Terminal = () => {
   const [lines, setLines] = useState([]);
-  const [command, setCommand] = useState("");
   const [directory, setDirectory] = useState("");
+  const [command, setCommand] = useState("");
   const [cursorMoves, setCursorMoves] = useState(0);
 
   const refInput = useRef(null);
+  const refSaveText = useRef("");
+  const refProgressBar = useRef(false);
 
   useLayoutEffect(() => {
     refInput.current.focus();
@@ -15,10 +19,75 @@ const Terminal = () => {
 
   useEffect(() => {
     window.terminal.incomingData("terminal.incomingData", (data) => {
-      setLines((value) => [...value, data]);
-      setDirectory(data);
+      validateOutput(data);
     });
   }, []);
+
+  const validateOutput = (data) => {
+    const convert = new Convert();
+
+    if (data.includes("[?25l")) {
+      refProgressBar.current = true;
+
+      setLines((prevArray) => [
+        ...prevArray,
+        convert
+          .toHtml(data)
+          .trim()
+          .replaceAll(/(?:\?2004h)/g, ""),
+      ]);
+
+      return;
+    } else if (
+      refProgressBar.current &&
+      !data.includes("[100;90m") &&
+      !data.includes("[107;97m")
+    ) {
+      refProgressBar.current = false;
+
+      setLines((prevArray) => prevArray.slice(0, -1));
+      setLines((prevArray) => [
+        ...prevArray,
+        convert
+          .toHtml(data)
+          .trim()
+          .replaceAll(/(?:\?2004h)/g, ""),
+      ]);
+
+      return;
+    }
+
+    if (refProgressBar.current) {
+      setLines((prevArray) => prevArray.slice(0, -1));
+      setLines((prevArray) => [
+        ...prevArray,
+        convert
+          .toHtml(data)
+          .trim()
+          .replaceAll(/(?:\?2004h)/g, ""),
+      ]);
+
+      return;
+    }
+
+    if (data.includes("[?2004l") || data.includes("[7m%")) {
+      return;
+    }
+
+    setLines((prevArray) => [
+      ...prevArray,
+      convert
+        .toHtml(data)
+        .trim()
+        .replaceAll(/(?:\?2004h)/g, ""),
+    ]);
+    setDirectory(
+      convert
+        .toHtml(data)
+        .trim()
+        .replaceAll(/(?:\?2004h)/g, ""),
+    );
+  };
 
   const handleOnFocusSection = () => {
     refInput.current.focus();
@@ -76,6 +145,11 @@ const Terminal = () => {
         return setLines([]);
       }
 
+      refSaveText.current = "";
+
+      setLines((prevArray) => prevArray.slice(0, -1));
+      setLines((lines) => [...lines, directory + value]);
+
       window.terminal.keyStroke("terminal.keyStroke", value);
     }
   };
@@ -88,38 +162,37 @@ const Terminal = () => {
     setCommand(convertSpace(event.target.value));
   };
 
+  // eslint-disable-next-line react/prop-types
+  const LineValue = ({ value }) => {
+    return <LineStyled dangerouslySetInnerHTML={{ __html: sanitize(value) }} />;
+  };
+
   return (
-    <TerminalStyled onClick={handleOnFocusSection}>
-      <ul>
+    <>
+      <TerminalStyled onClick={handleOnFocusSection}>
         {lines?.map((value, index) => (
-          <LineStyled key={index}>{value}</LineStyled>
-        ))}
-        <InputLine>
-          <InputTextBefore>{directory}</InputTextBefore>
-          <LineStyled
-            key="command"
-            directory
-            command
-            input
-            cursorMoves={cursorMoves}
-          >
-            {command}
+          <LineStyled key={index}>
+            <LineValue value={value} />
+            {lines.length - 1 === index && (
+              <LineStyled directory command input cursorMoves={cursorMoves}>
+                {command}
+              </LineStyled>
+            )}
           </LineStyled>
-        </InputLine>
-      </ul>
-      <input
-        ref={refInput}
-        onKeyDown={handleKeyDown}
-        onChange={handleChangeInput}
-      />
-    </TerminalStyled>
+        ))}
+        <input
+          ref={refInput}
+          onKeyDown={handleKeyDown}
+          onChange={handleChangeInput}
+        />
+      </TerminalStyled>
+    </>
   );
 };
 
 const Color = {
   front: "#DADBDD",
   back: "#121212",
-  alternative: "#F28482",
 };
 
 const fontWidth = 9.6;
@@ -127,19 +200,13 @@ const fontWidth = 9.6;
 const TerminalStyled = styled.div`
   font-family: Courier New;
   background: ${Color.back};
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   width: 100%;
   padding: 10px 30px;
   box-sizing: border-box;
   overflow: hidden auto;
-
-  ul {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding-inline-start: 0;
-    list-style: none;
-  }
 
   input {
     display: inline-block;
@@ -154,31 +221,15 @@ const TerminalStyled = styled.div`
   }
 `;
 
-const InputLine = styled.div`
-  display: flex;
-`;
-
-const InputTextBefore = styled.span`
+const LineStyled = styled.span`
+  margin: 0;
   color: ${Color.front};
-  left: -15px;
-`;
-
-const LineStyled = styled.li`
-  display: inline-block;
-  color: ${Color.front};
-  min-height: 1rem;
-  position: relative;
+  align-self: flex-start;
+  white-space: pre-wrap;
   word-break: break-all;
-  white-space: ${({ banner }) => (banner ? "pre" : "initial")};
-  padding-bottom: 0.5rem;
-
-  span {
-    color: ${Color.alternative};
-  }
 
   :after {
     content: "";
-    position: absolute;
     width: ${fontWidth}px;
     height: 1rem;
     background: ${Color.front};

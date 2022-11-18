@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const os = require("os");
 const pty = require("node-pty");
@@ -20,33 +20,25 @@ const createWindow = () => {
   mainWindow.focus();
 
   const ptyProcess = pty.spawn(shell, [], {
+    name: "xterm-color",
     cwd: process.env.HOME,
     env: process.env,
+    cols: 80,
+    rows: 30,
+  });
+
+  ipcMain.handle("terminal.keyStroke", (event, key) => {
+    ptyProcess.write(`${key}\r`);
   });
 
   ptyProcess.onData((data) => {
     process.stdout.write(data);
     mainWindow.webContents.send("terminal.incomingData", data);
   });
-
-  ipcMain.on("terminal.keyStroke", (event, key) => {
-    if (key === "exit") {
-      ptyProcess.write("\x03\r");
-    }
-
-    ptyProcess.write(key + "\r");
-  });
 };
 
 app.whenReady().then(() => {
   createWindow();
-
-  globalShortcut.register("CommandOrControl+Left", () => {
-    return;
-  });
-  globalShortcut.register("CommandOrControl+Right", () => {
-    return;
-  });
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld("terminal", {
   keyStroke: (channel, data) => {
     let validChannels = ["terminal.keyStroke"];
     if (validChannels.includes(channel)) {
-      ipcRenderer.send(channel, data);
+      return ipcRenderer.invoke(channel, data);
     }
   },
   incomingData: (channel, func) => {
