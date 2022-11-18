@@ -10,8 +10,9 @@ const Terminal = () => {
   const [cursorMoves, setCursorMoves] = useState(0);
 
   const refInput = useRef(null);
-  const refSaveText = useRef("");
   const refProgressBar = useRef(false);
+  const refHistory = useRef([]);
+  const refHistoryCount = useRef(0);
 
   useLayoutEffect(() => {
     refInput.current.focus();
@@ -96,14 +97,16 @@ const Terminal = () => {
   const newLine = () => {
     const value = refInput.current.value;
 
+    refHistory.current.push(value);
+    refHistoryCount.current = refHistory.current.length;
     refInput.current.value = "";
     setCommand("");
 
     return value;
   };
 
-  const updateCursor = (key) => {
-    switch (key) {
+  const updateTextInputArea = (event) => {
+    switch (event.key) {
       case "ArrowLeft":
         if (command.length > cursorMoves) {
           setCursorMoves(cursorMoves + 1);
@@ -114,12 +117,34 @@ const Terminal = () => {
           setCursorMoves(cursorMoves - 1);
         }
         break;
+      case "ArrowUp":
+        event.preventDefault();
+        if (refHistoryCount.current > 0) {
+          refInput.current.value = "";
+          refHistoryCount.current -= 1;
+          refInput.current.value += refHistory.current[refHistoryCount.current];
+          setCommand(refHistory.current[refHistoryCount.current]);
+        }
+        break;
+      case "ArrowDown":
+        event.preventDefault();
+
+        if (refHistoryCount.current < refHistory.current.length) {
+          refInput.current.value = "";
+          refHistoryCount.current += 1;
+          refInput.current.value += refHistory.current[refHistoryCount.current];
+          setCommand(refHistory.current[refHistoryCount.current]);
+        }
+
+        if (refHistoryCount.current === refHistory.current.length) {
+          refInput.current.value = "";
+          setCommand("");
+        }
+        break;
       case "Delete":
         if (command.length >= cursorMoves) {
           setCursorMoves(cursorMoves - 1);
         }
-        break;
-      case "Tab":
         break;
       case "Home":
         setCursorMoves(command.length);
@@ -136,21 +161,29 @@ const Terminal = () => {
   };
 
   const handleKeyDown = (event) => {
-    updateCursor(event.key);
+    updateTextInputArea(event);
 
     if (event.key === "Enter") {
       const value = newLine();
 
       if (value === "clear" || value === "cls") {
-        return setLines([]);
+        return setLines([directory]);
       }
-
-      refSaveText.current = "";
 
       setLines((prevArray) => prevArray.slice(0, -1));
       setLines((lines) => [...lines, directory + value]);
 
       window.terminal.keyStroke("terminal.keyStroke", value);
+    }
+
+    if (event.ctrlKey) {
+      if (event.key === "u") {
+        refInput.current.value = "";
+
+        return setCommand("");
+      } else if (event.key === "c") {
+        window.terminal.keyStroke("terminal.keyStroke", "\x03");
+      }
     }
   };
 
@@ -168,25 +201,23 @@ const Terminal = () => {
   };
 
   return (
-    <>
-      <TerminalStyled onClick={handleOnFocusSection}>
-        {lines?.map((value, index) => (
-          <LineStyled key={index}>
-            <LineValue value={value} />
-            {lines.length - 1 === index && (
-              <LineStyled directory command input cursorMoves={cursorMoves}>
-                {command}
-              </LineStyled>
-            )}
-          </LineStyled>
-        ))}
-        <input
-          ref={refInput}
-          onKeyDown={handleKeyDown}
-          onChange={handleChangeInput}
-        />
-      </TerminalStyled>
-    </>
+    <TerminalStyled onClick={handleOnFocusSection}>
+      {lines?.map((value, index) => (
+        <LineStyled key={index}>
+          <LineValue value={value} />
+          {lines.length - 1 === index && (
+            <LineStyled command input cursorMoves={cursorMoves}>
+              {command}
+            </LineStyled>
+          )}
+        </LineStyled>
+      ))}
+      <input
+        ref={refInput}
+        onKeyDown={handleKeyDown}
+        onChange={handleChangeInput}
+      />
+    </TerminalStyled>
   );
 };
 
