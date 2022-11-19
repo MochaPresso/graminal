@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, MenuItem, ipcMain } = require("electron");
 const path = require("path");
 const os = require("os");
 const pty = require("node-pty");
@@ -9,11 +9,33 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
+    minWidth: 320,
+    minHeight: 240,
     webPreferences: {
       nodeIntegration: true,
       preload: path.join(__dirname, "preload.js"),
     },
   });
+
+  const menu = Menu.getApplicationMenu();
+
+  menu.append(
+    new MenuItem({
+      label: "SideBar",
+      submenu: [
+        {
+          label: "Toggle",
+          click: () => {
+            mainWindow.webContents.send("sideBar.toggle");
+          },
+          accelerator: "CommandOrControl+T",
+        },
+      ],
+    }),
+  );
+  menu.items.find((item) => item.role === "help").visible = false;
+
+  Menu.setApplicationMenu(menu);
 
   mainWindow.loadURL("http://localhost:3000");
   mainWindow.webContents.openDevTools();

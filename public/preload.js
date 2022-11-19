@@ -13,8 +13,11 @@ contextBridge.exposeInMainWorld("terminal", {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
-  keyBind: (channel, func) => {
-    let validChannels = ["terminal.keyBind"];
+});
+
+contextBridge.exposeInMainWorld("sideBar", {
+  toggle: (channel, func) => {
+    let validChannels = ["sideBar.toggle"];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }

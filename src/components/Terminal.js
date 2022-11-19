@@ -1,9 +1,10 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import styled from "styled-components";
 import Convert from "ansi-to-html";
+import PropTypes from "prop-types";
 import { sanitize } from "dompurify";
 
-const Terminal = () => {
+const Terminal = ({ isSideBarToggle }) => {
   const [lines, setLines] = useState([]);
   const [directory, setDirectory] = useState("");
   const [command, setCommand] = useState("");
@@ -195,13 +196,19 @@ const Terminal = () => {
     setCommand(convertSpace(event.target.value));
   };
 
-  // eslint-disable-next-line react/prop-types
   const LineValue = ({ value }) => {
     return <LineStyled dangerouslySetInnerHTML={{ __html: sanitize(value) }} />;
   };
 
+  LineValue.propTypes = {
+    value: PropTypes.string,
+  };
+
   return (
-    <TerminalStyled onClick={handleOnFocusSection}>
+    <TerminalStyled
+      onClick={handleOnFocusSection}
+      isSideBarToggle={isSideBarToggle}
+    >
       {lines?.map((value, index) => (
         <LineStyled key={index}>
           <LineValue value={value} />
@@ -231,11 +238,16 @@ const fontWidth = 9.6;
 const TerminalStyled = styled.div`
   font-family: Courier New;
   background: ${Color.back};
+  position: fixed;
   display: flex;
+  align-items: center;
   flex-direction: column;
+  right: 0;
   height: 100vh;
-  width: 100%;
-  padding: 10px 30px;
+  width: ${({ isSideBarToggle }) => (isSideBarToggle ? "80vw" : "100vw")};
+  max-width: ${({ isSideBarToggle }) =>
+    isSideBarToggle ? `calc(100% - 200px)` : "100%"};
+  padding: 10px 20px;
   box-sizing: border-box;
   overflow: hidden auto;
 
@@ -270,5 +282,9 @@ const LineStyled = styled.span`
       cursorMoves ? `-${cursorMoves * fontWidth}px` : 0};
   }
 `;
+
+Terminal.propTypes = {
+  isSideBarToggle: PropTypes.bool.isRequired,
+};
 
 export default Terminal;
