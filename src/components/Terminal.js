@@ -1,12 +1,18 @@
-import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useLayoutEffect,
+  useEffect,
+  useContext,
+} from "react";
 import styled from "styled-components";
 import Convert from "ansi-to-html";
 import PropTypes from "prop-types";
 import { sanitize } from "dompurify";
+import { DirectoryContextStore } from "../stores/DirectoryContext";
 
 const Terminal = ({ isSideBarToggle }) => {
   const [lines, setLines] = useState([]);
-  const [directory, setDirectory] = useState("");
   const [command, setCommand] = useState("");
   const [cursorMoves, setCursorMoves] = useState(0);
 
@@ -14,6 +20,8 @@ const Terminal = ({ isSideBarToggle }) => {
   const refProgressBar = useRef(false);
   const refHistory = useRef([]);
   const refHistoryCount = useRef(0);
+
+  const Directory = useContext(DirectoryContextStore);
 
   useLayoutEffect(() => {
     refInput.current.focus();
@@ -72,23 +80,39 @@ const Terminal = ({ isSideBarToggle }) => {
       return;
     }
 
-    if (data.includes("[?2004l") || data.includes("[7m%")) {
-      return;
+    if (data.includes("[?2004l")) {
+      if (data.includes("c\bcd ..\x1B")) {
+        Directory.currentDirectory.split("/").length > 2
+          ? Directory.setCurrentDirectory((prevDirectory) =>
+              prevDirectory.split("/").slice(0, -1).join("/"),
+            )
+          : Directory.setCurrentDirectory("/");
+      } else if (data.includes("c\bcd ~\x1B") || data.includes("c\bcd \x1B")) {
+        Directory.setCurrentDirectory(window.directory.homeDirectory());
+      } else if (data.includes("c\bcd /\x1B")) {
+        Directory.setCurrentDirectory("/");
+      } else if (data.includes("c\bcd ") && !data.includes("cd: no such")) {
+        Directory.setCurrentDirectory(
+          (prevDirectory) =>
+            prevDirectory + "/" + data.split("c\bcd ")[1].split("\x1B")[0],
+        );
+      }
+
+      data =
+        data.trim().split("\x1B[?2004l")[1] !== ""
+          ? data.trim().split("\x1B[?2004l")[1]
+          : "";
     }
 
-    setLines((prevArray) => [
-      ...prevArray,
-      convert
-        .toHtml(data)
-        .trim()
-        .replaceAll(/(?:\?2004h)/g, ""),
-    ]);
-    setDirectory(
-      convert
-        .toHtml(data)
-        .trim()
-        .replaceAll(/(?:\?2004h)/g, ""),
-    );
+    if (data.includes("\x1B[m\x1B[m\x1B[m\x1B[J")) {
+      const splitData = data.split("\x1B[m\x1B[m\x1B[m\x1B[J");
+
+      setLines((prevArray) => [
+        ...prevArray,
+        splitData[0].replace("\x1B[1m\x1B[7m%\x1B[m\x1B[1m\x1B[m", "").trim(),
+        splitData[1].replace("\x1B[K\x1B[?2004h", ""),
+      ]);
+    }
   };
 
   const handleOnFocusSection = () => {
@@ -166,14 +190,20 @@ const Terminal = ({ isSideBarToggle }) => {
 
     if (event.key === "Enter") {
       const value = newLine();
+      const currentDirectory =
+        Directory.currentDirectory === window.directory.homeDirectory()
+          ? "~"
+          : Directory.currentDirectory.split("/").pop();
 
       if (value === "clear" || value === "cls") {
-        return setLines([directory]);
+        return setLines([
+          `${window.terminal.terminalUserName()} ${currentDirectory} % `,
+        ]);
       }
 
-      setLines((prevArray) => prevArray.slice(0, -1));
-      setLines((lines) => [...lines, directory + value]);
+      lines[lines.length - 1] = lines[lines.length - 1] + value;
 
+      setLines(lines);
       window.terminal.keyStroke("terminal.keyStroke", value);
     }
 
@@ -205,7 +235,7 @@ const Terminal = ({ isSideBarToggle }) => {
   };
 
   return (
-    <TerminalStyled
+    <TerminalContainer
       onClick={handleOnFocusSection}
       isSideBarToggle={isSideBarToggle}
     >
@@ -224,20 +254,20 @@ const Terminal = ({ isSideBarToggle }) => {
         onKeyDown={handleKeyDown}
         onChange={handleChangeInput}
       />
-    </TerminalStyled>
+    </TerminalContainer>
   );
 };
 
 const Color = {
-  front: "#DADBDD",
-  back: "#121212",
+  font: "#DADBDD",
+  background: "#121212",
 };
 
 const fontWidth = 9.6;
 
-const TerminalStyled = styled.div`
+const TerminalContainer = styled.div`
   font-family: Courier New;
-  background: ${Color.back};
+  background: ${Color.background};
   position: fixed;
   display: flex;
   align-items: center;
@@ -266,7 +296,7 @@ const TerminalStyled = styled.div`
 
 const LineStyled = styled.span`
   margin: 0;
-  color: ${Color.front};
+  color: ${Color.font};
   align-self: flex-start;
   white-space: pre-wrap;
   word-break: break-all;
@@ -275,7 +305,7 @@ const LineStyled = styled.span`
     content: "";
     width: ${fontWidth}px;
     height: 1rem;
-    background: ${Color.front};
+    background: ${Color.font};
     opacity: 0.6;
     display: ${({ input }) => (input ? "inline-block" : "none")};
     margin-left: ${({ cursorMoves }) =>
