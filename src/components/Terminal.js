@@ -313,8 +313,8 @@ const LineStyled = styled.span`
   }
 `;
 
+export default Terminal;
+
 Terminal.propTypes = {
   isSideBarToggle: PropTypes.bool.isRequired,
 };
-
-export default Terminal;
