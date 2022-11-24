@@ -8,8 +8,9 @@ const ContextMenuArea = ({
   existJsonFile,
   scriptsList,
 }) => {
-  const refRootElement = useRef();
   const Directory = useContext(DirectoryContextStore);
+
+  const refRootElement = useRef();
 
   const moveDirectory = window.directory.relativePath(
     Directory.currentDirectory,

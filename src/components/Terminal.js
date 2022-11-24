@@ -12,20 +12,21 @@ import { sanitize } from "dompurify";
 import { DirectoryContextStore } from "../stores/DirectoryContext";
 
 const Terminal = ({ isSideBarToggle }) => {
+  const Directory = useContext(DirectoryContextStore);
+
   const [lines, setLines] = useState([]);
   const [beforeCommand, setBeforeCommand] = useState("");
   const [afterCommand, setAfterCommand] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  const refInput = useRef(null);
-  const refProgressBar = useRef(false);
-  const refHistory = useRef([]);
-  const refHistoryCount = useRef(0);
-
-  const Directory = useContext(DirectoryContextStore);
+  const inputRef = useRef(null);
+  const progressBarRef = useRef(false);
+  const historyRef = useRef([]);
+  const historyCountRef = useRef(0);
+  const scrollRef = useRef();
 
   useLayoutEffect(() => {
-    refInput.current.focus();
+    inputRef.current.focus();
   }, []);
 
   useEffect(() => {
@@ -34,11 +35,22 @@ const Terminal = ({ isSideBarToggle }) => {
     });
   }, []);
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [lines]);
+
+  const scrollToBottom = () => {
+    scrollRef.current.scrollIntoView({
+      behavior: "auto",
+      block: "end",
+    });
+  };
+
   const validateOutput = (data) => {
     const convert = new Convert();
 
     if (data.includes("[?25l")) {
-      refProgressBar.current = true;
+      progressBarRef.current = true;
 
       setLines((prevArray) => [
         ...prevArray,
@@ -50,11 +62,11 @@ const Terminal = ({ isSideBarToggle }) => {
 
       return;
     } else if (
-      refProgressBar.current &&
+      progressBarRef.current &&
       !data.includes("[100;90m") &&
       !data.includes("[107;97m")
     ) {
-      refProgressBar.current = false;
+      progressBarRef.current = false;
 
       setLines((prevArray) => prevArray.slice(0, -1));
       setLines((prevArray) => [
@@ -68,7 +80,7 @@ const Terminal = ({ isSideBarToggle }) => {
       return;
     }
 
-    if (refProgressBar.current) {
+    if (progressBarRef.current) {
       setLines((prevArray) => prevArray.slice(0, -1));
       setLines((prevArray) => [
         ...prevArray,
@@ -129,15 +141,15 @@ const Terminal = ({ isSideBarToggle }) => {
   };
 
   const handleOnFocusSection = () => {
-    refInput.current.focus();
+    inputRef.current.focus();
   };
 
   const newLine = () => {
-    const value = refInput.current.value;
+    const value = inputRef.current.value;
 
-    refHistory.current.push(value);
-    refHistoryCount.current = refHistory.current.length;
-    refInput.current.value = "";
+    historyRef.current.push(value);
+    historyCountRef.current = historyRef.current.length;
+    inputRef.current.value = "";
     setBeforeCommand("");
     setAfterCommand("");
     setCursorPosition(0);
@@ -166,29 +178,29 @@ const Terminal = ({ isSideBarToggle }) => {
       case "ArrowUp":
         event.preventDefault();
 
-        if (refHistoryCount.current > 0) {
-          refHistoryCount.current -= 1;
-          refInput.current.value = refHistory.current[refHistoryCount.current];
+        if (historyCountRef.current > 0) {
+          historyCountRef.current -= 1;
+          inputRef.current.value = historyRef.current[historyCountRef.current];
 
-          setBeforeCommand(refInput.current.value);
+          setBeforeCommand(inputRef.current.value);
           setAfterCommand("");
-          setCursorPosition(refInput.current.value.length);
+          setCursorPosition(inputRef.current.value.length);
         }
         break;
       case "ArrowDown":
         event.preventDefault();
 
-        if (refHistoryCount.current < refHistory.current.length) {
-          refHistoryCount.current += 1;
-          refInput.current.value = refHistory.current[refHistoryCount.current];
+        if (historyCountRef.current < historyRef.current.length) {
+          historyCountRef.current += 1;
+          inputRef.current.value = historyRef.current[historyCountRef.current];
 
-          setBeforeCommand(refInput.current.value);
+          setBeforeCommand(inputRef.current.value);
           setAfterCommand("");
-          setCursorPosition(refInput.current.value.length);
+          setCursorPosition(inputRef.current.value.length);
         }
 
-        if (refHistoryCount.current === refHistory.current.length) {
-          refInput.current.value = "";
+        if (historyCountRef.current === historyRef.current.length) {
+          inputRef.current.value = "";
 
           setBeforeCommand("");
           setAfterCommand("");
@@ -227,7 +239,7 @@ const Terminal = ({ isSideBarToggle }) => {
 
     if (event.ctrlKey) {
       if (event.key === "u") {
-        refInput.current.value = "";
+        inputRef.current.value = "";
 
         setBeforeCommand("");
         setAfterCommand("");
@@ -280,10 +292,11 @@ const Terminal = ({ isSideBarToggle }) => {
         </LineStyled>
       ))}
       <input
-        ref={refInput}
+        ref={inputRef}
         onKeyDown={handleKeyDown}
         onChange={handleChangeInput}
       />
+      <div ref={scrollRef} />
     </TerminalContainer>
   );
 };
