@@ -1,19 +1,40 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const os = require("os");
-const { readdir } = require("fs").promises;
+const path = require("path");
+const fs = require("fs");
 
-const directoryContents = async (path) => {
-  const results = await readdir(path, { withFileTypes: true });
+const directoryContents = async (directoryPath) => {
+  const results = await fs.promises.readdir(directoryPath, {
+    withFileTypes: true,
+  });
   const resultsWithoutHiddenFiles = results.filter(
     (file) => file.name[0] !== ".",
   );
+
+  for (const entry of resultsWithoutHiddenFiles) {
+    const packageJsonPath = path.join(
+      directoryPath,
+      entry.name,
+      "package.json",
+    );
+
+    if (fs.existsSync(packageJsonPath)) {
+      entry.existJsonFile = true;
+
+      const fileData = fs.readFileSync(packageJsonPath);
+      entry.scriptsList = Object.keys(JSON.parse(fileData.toString()).scripts);
+    } else {
+      entry.existJsonFile = false;
+    }
+  }
 
   return resultsWithoutHiddenFiles
     .map((entry) => ({
       name: entry.name,
       type: entry.isDirectory() ? "directory" : "file",
+      existJsonFile: entry.existJsonFile,
+      scriptsList: entry.scriptsList,
     }))
-    .filter((name) => name[0] !== ".")
     .sort((a, b) => {
       if (a.type === b.type) {
         return 0;
@@ -23,6 +44,10 @@ const directoryContents = async (path) => {
         return 1;
       }
     });
+};
+
+const relativePath = (from, to) => {
+  return path.relative(from, to);
 };
 
 const terminalUserName = () => {
@@ -56,9 +81,22 @@ contextBridge.exposeInMainWorld("sideBar", {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
+  showContextMenu: (channel, data) => {
+    let validChannels = ["sideBar.showContextMenu"];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.send(channel, data);
+    }
+  },
+  contextMenuCommand: (channel, func) => {
+    let validChannels = ["sideBar.contextMenuCommand"];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.on(channel, (event, ...args) => func(...args));
+    }
+  },
 });
 
 contextBridge.exposeInMainWorld("directory", {
   directoryContents,
   homeDirectory,
+  relativePath,
 });

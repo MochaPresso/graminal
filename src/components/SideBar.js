@@ -35,6 +35,7 @@ const SideBarContainer = styled.div`
   box-shadow: 5px 0px 10px hsla(0, 0%, 10%, 0.2);
   overflow: scroll;
   z-index: 1;
+  user-select: none;
 `;
 
 const DirectoryHeader = styled.div`

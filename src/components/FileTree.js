@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
+import ContextMenuArea from "./menu/ContextMenu";
 
 const FileTree = ({ directory }) => {
   const [files, setFiles] = useState([]);
@@ -23,16 +24,20 @@ const FileTree = ({ directory }) => {
       {files &&
         files.map((entry) =>
           entry.type === "directory" ? (
-            <>
-              <FolderStyled key={entry.name}>
+            <FolderStyled key={entry.name}>
+              <ContextMenuArea
+                directory={`${directory}/${entry.name}`}
+                existJsonFile={entry.existJsonFile}
+                scriptsList={entry.scriptsList}
+              >
                 <FolderButtonStyled onClick={() => toggleNested(entry.name)}>
                   {entry.name}
                 </FolderButtonStyled>
-                {showNested[entry.name] && (
-                  <FileTree directory={`${directory}/${entry.name}`} />
-                )}
-              </FolderStyled>
-            </>
+              </ContextMenuArea>
+              {showNested[entry.name] && (
+                <FileTree directory={`${directory}/${entry.name}`} />
+              )}
+            </FolderStyled>
           ) : (
             <FileStyled key={entry.name}>{entry.name}</FileStyled>
           ),

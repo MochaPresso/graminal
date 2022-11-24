@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, MenuItem, ipcMain } = require("electron");
+const isDev = require("electron-is-dev");
 const path = require("path");
 const os = require("os");
 const pty = require("node-pty");
@@ -16,6 +17,7 @@ const createWindow = () => {
       preload: path.join(__dirname, "preload.js"),
     },
   });
+
   const menu = Menu.getApplicationMenu();
 
   menu.append(
@@ -39,7 +41,11 @@ const createWindow = () => {
 
   Menu.setApplicationMenu(menu);
 
-  mainWindow.loadURL("http://localhost:3000");
+  mainWindow.loadURL(
+    isDev
+      ? "http://localhost:3000"
+      : `file://${path.join(__dirname, "../build/index.html")}`,
+  );
   mainWindow.webContents.openDevTools();
   mainWindow.focus();
   mainWindow.webContents.on("before-input-event", (event, input) => {
@@ -86,9 +92,50 @@ const createWindow = () => {
     rows: 30,
   });
 
-  ipcMain.on("terminal.keyStroke", (event, key) => {
+  ipcMain.on("terminal.keyStroke", (channel, key) => {
     ptyProcess.write(`${key}\r`);
     userInput = true;
+  });
+
+  ipcMain.on("sideBar.showContextMenu", (channel, event) => {
+    const scriptsList = [{ type: "separator" }];
+
+    if (event.scriptsList) {
+      event.scriptsList.forEach((element) => {
+        scriptsList.push({
+          label: `npm run ${element}`,
+          click: () => {
+            ptyProcess.write(`cd ${event.moveDirectory}\r`);
+            setTimeout(() => ptyProcess.write(`npm run ${element}\r`), 500);
+            // ptyProcess.write(`npm run ${element}\r`);
+          },
+        });
+      });
+    }
+
+    const template = [
+      {
+        label: "Move Directory",
+        click: () => {
+          ptyProcess.write(`cd ${event.moveDirectory}\r`);
+        },
+      },
+      ...(event.existJsonFile
+        ? [
+            { type: "separator" },
+            {
+              label: "npm install",
+              click: () => {
+                ptyProcess.write(`cd ${event.moveDirectory}\r`);
+                ptyProcess.write("npm install\r");
+              },
+            },
+          ]
+        : []),
+      ...(event.scriptsList ? scriptsList : []),
+    ];
+    const menu = Menu.buildFromTemplate(template);
+    menu.popup();
   });
 
   ptyProcess.onData((data) => {

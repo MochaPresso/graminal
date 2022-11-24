@@ -92,9 +92,12 @@ const Terminal = ({ isSideBarToggle }) => {
       } else if (data.includes("c\bcd /\x1B")) {
         Directory.setCurrentDirectory("/");
       } else if (data.includes("c\bcd ") && !data.includes("cd: no such")) {
+        console.log("cd data...", data);
         Directory.setCurrentDirectory(
           (prevDirectory) =>
-            prevDirectory + "/" + data.split("c\bcd ")[1].split("\x1B")[0],
+            prevDirectory +
+            "/" +
+            data.split("c\bcd ")[1].split("\x1B[?2004l")[0],
         );
       }
 
@@ -107,12 +110,22 @@ const Terminal = ({ isSideBarToggle }) => {
     if (data.includes("\x1B[m\x1B[m\x1B[m\x1B[J")) {
       const splitData = data.split("\x1B[m\x1B[m\x1B[m\x1B[J");
 
-      setLines((prevArray) => [
+      return setLines((prevArray) => [
         ...prevArray,
-        splitData[0].replace("\x1B[1m\x1B[7m%\x1B[m\x1B[1m\x1B[m", "").trim(),
-        splitData[1].replace("\x1B[K\x1B[?2004h", ""),
+        convert.toHtml(
+          splitData[0].replace("\x1B[1m\x1B[7m%\x1B[m\x1B[1m\x1B[m", "").trim(),
+        ),
+        convert.toHtml(splitData[1].replace("\x1B[K\x1B[?2004h", "")),
       ]);
     }
+
+    return setLines((prevArray) => [
+      ...prevArray,
+      convert
+        .toHtml(data)
+        .trim()
+        .replaceAll(/(?:\?2004h)/g, ""),
+    ]);
   };
 
   const handleOnFocusSection = () => {
