@@ -13,8 +13,9 @@ import { DirectoryContextStore } from "../stores/DirectoryContext";
 
 const Terminal = ({ isSideBarToggle }) => {
   const [lines, setLines] = useState([]);
-  const [command, setCommand] = useState("");
-  const [cursorMoves, setCursorMoves] = useState(0);
+  const [beforeCommand, setBeforeCommand] = useState("");
+  const [afterCommand, setAfterCommand] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
 
   const refInput = useRef(null);
   const refProgressBar = useRef(false);
@@ -92,7 +93,6 @@ const Terminal = ({ isSideBarToggle }) => {
       } else if (data.includes("c\bcd /\x1B")) {
         Directory.setCurrentDirectory("/");
       } else if (data.includes("c\bcd ") && !data.includes("cd: no such")) {
-        console.log("cd data...", data);
         Directory.setCurrentDirectory(
           (prevDirectory) =>
             prevDirectory +
@@ -138,7 +138,9 @@ const Terminal = ({ isSideBarToggle }) => {
     refHistory.current.push(value);
     refHistoryCount.current = refHistory.current.length;
     refInput.current.value = "";
-    setCommand("");
+    setBeforeCommand("");
+    setAfterCommand("");
+    setCursorPosition(0);
 
     return value;
   };
@@ -146,52 +148,55 @@ const Terminal = ({ isSideBarToggle }) => {
   const updateTextInputArea = (event) => {
     switch (event.key) {
       case "ArrowLeft":
-        if (command.length > cursorMoves) {
-          setCursorMoves(cursorMoves + 1);
+        if (beforeCommand.length > 0) {
+          const char = beforeCommand[beforeCommand.length - 1];
+          setBeforeCommand((text) => text.slice(0, -1));
+          setAfterCommand((text) => char + text);
+          setCursorPosition((position) => position - 1);
         }
         break;
       case "ArrowRight":
-        if (cursorMoves > 0) {
-          setCursorMoves(cursorMoves - 1);
+        if (afterCommand.length > 0) {
+          const char = afterCommand[0];
+          setBeforeCommand((text) => text + char);
+          setAfterCommand((text) => text.slice(1));
+          setCursorPosition((position) => position + 1);
         }
         break;
       case "ArrowUp":
         event.preventDefault();
+
         if (refHistoryCount.current > 0) {
-          refInput.current.value = "";
           refHistoryCount.current -= 1;
-          refInput.current.value += refHistory.current[refHistoryCount.current];
-          setCommand(refHistory.current[refHistoryCount.current]);
+          refInput.current.value = refHistory.current[refHistoryCount.current];
+
+          setBeforeCommand(refInput.current.value);
+          setAfterCommand("");
+          setCursorPosition(refInput.current.value.length);
         }
         break;
       case "ArrowDown":
         event.preventDefault();
 
         if (refHistoryCount.current < refHistory.current.length) {
-          refInput.current.value = "";
           refHistoryCount.current += 1;
-          refInput.current.value += refHistory.current[refHistoryCount.current];
-          setCommand(refHistory.current[refHistoryCount.current]);
+          refInput.current.value = refHistory.current[refHistoryCount.current];
+
+          setBeforeCommand(refInput.current.value);
+          setAfterCommand("");
+          setCursorPosition(refInput.current.value.length);
         }
 
         if (refHistoryCount.current === refHistory.current.length) {
           refInput.current.value = "";
-          setCommand("");
+
+          setBeforeCommand("");
+          setAfterCommand("");
+          setCursorPosition(0);
         }
-        break;
-      case "Delete":
-        if (command.length >= cursorMoves) {
-          setCursorMoves(cursorMoves - 1);
-        }
-        break;
-      case "Home":
-        setCursorMoves(command.length);
-        break;
-      case "End":
-        setCursorMoves(0);
         break;
       case "Enter":
-        setCursorMoves(0);
+        setCursorPosition(0);
         break;
       default:
         break;
@@ -224,7 +229,11 @@ const Terminal = ({ isSideBarToggle }) => {
       if (event.key === "u") {
         refInput.current.value = "";
 
-        return setCommand("");
+        setBeforeCommand("");
+        setAfterCommand("");
+        setCursorPosition(0);
+
+        return;
       } else if (event.key === "c") {
         window.terminal.keyStroke("terminal.keyStroke", "\x03");
       }
@@ -236,7 +245,13 @@ const Terminal = ({ isSideBarToggle }) => {
   };
 
   const handleChangeInput = (event) => {
-    setCommand(convertSpace(event.target.value));
+    setCursorPosition(event.target.selectionStart - 1);
+    setBeforeCommand(
+      convertSpace(event.target.value.slice(0, event.target.selectionStart)),
+    );
+    setAfterCommand(
+      convertSpace(event.target.value.slice(event.target.selectionStart)),
+    );
   };
 
   const LineValue = ({ value }) => {
@@ -256,8 +271,10 @@ const Terminal = ({ isSideBarToggle }) => {
         <LineStyled key={index}>
           <LineValue value={value} />
           {lines.length - 1 === index && (
-            <LineStyled command input cursorMoves={cursorMoves}>
-              {command}
+            <LineStyled beforeCommand afterCommand>
+              <span>{beforeCommand}</span>
+              <Caret cursorPosition={cursorPosition} />
+              <span>{afterCommand}</span>
             </LineStyled>
           )}
         </LineStyled>
@@ -307,23 +324,21 @@ const TerminalContainer = styled.div`
   }
 `;
 
+const Caret = styled.div`
+  display: inline-block;
+  position: absolute;
+  width: ${fontWidth}px;
+  height: 1rem;
+  background: ${Color.font};
+  opacity: 0.6;
+`;
+
 const LineStyled = styled.span`
   margin: 0;
   color: ${Color.font};
   align-self: flex-start;
   white-space: pre-wrap;
   word-break: break-all;
-
-  :after {
-    content: "";
-    width: ${fontWidth}px;
-    height: 1rem;
-    background: ${Color.font};
-    opacity: 0.6;
-    display: ${({ input }) => (input ? "inline-block" : "none")};
-    margin-left: ${({ cursorMoves }) =>
-      cursorMoves ? `-${cursorMoves * fontWidth}px` : 0};
-  }
 `;
 
 export default Terminal;

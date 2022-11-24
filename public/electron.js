@@ -107,7 +107,6 @@ const createWindow = () => {
           click: () => {
             ptyProcess.write(`cd ${event.moveDirectory}\r`);
             setTimeout(() => ptyProcess.write(`npm run ${element}\r`), 500);
-            // ptyProcess.write(`npm run ${element}\r`);
           },
         });
       });
