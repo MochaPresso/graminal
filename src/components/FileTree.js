@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import ContextMenuArea from "./menu/ContextMenu";
+import COLORS from "../constants/COLORS";
+import { FaFolder, FaFolderOpen, FaFile } from "react-icons/fa";
 
-const FileTree = ({ directory }) => {
+const FileTree = ({ directory, depth }) => {
   const [files, setFiles] = useState([]);
   const [showNested, setShowNested] = useState({});
 
@@ -30,25 +32,38 @@ const FileTree = ({ directory }) => {
                 existJsonFile={entry.existJsonFile}
                 scriptsList={entry.scriptsList}
               >
-                <FolderButtonStyled onClick={() => toggleNested(entry.name)}>
-                  {entry.name}
-                </FolderButtonStyled>
+                <FolderContainer depth={depth}>
+                  {showNested[entry.name] ? (
+                    <FaFolderOpen size={16} color={COLORS.FONT} />
+                  ) : (
+                    <FaFolder size={16} color={COLORS.FONT} />
+                  )}
+                  <FolderButtonStyled
+                    onClick={() => toggleNested(entry.name)}
+                    depth={depth}
+                  >
+                    {entry.name}
+                  </FolderButtonStyled>
+                </FolderContainer>
               </ContextMenuArea>
               {showNested[entry.name] && (
-                <FileTree directory={`${directory}/${entry.name}`} />
+                <FileTree
+                  directory={`${directory}/${entry.name}`}
+                  depth={depth + 1}
+                />
               )}
             </FolderStyled>
           ) : (
-            <FileStyled key={entry.name}>{entry.name}</FileStyled>
+            <FileContainer depth={depth}>
+              <FaFile size={13.5} color={COLORS.FONT} />
+              <FileStyled key={entry.name} depth={depth}>
+                {entry.name}
+              </FileStyled>
+            </FileContainer>
           ),
         )}
     </Container>
   );
-};
-
-const Color = {
-  font: "#DADBDD",
-  headerBackground: "#585858",
 };
 
 const Container = styled.div`
@@ -57,33 +72,51 @@ const Container = styled.div`
   width: 100%;
 `;
 
+const FolderContainer = styled.div`
+  display: inline-flex;
+  width: 100%;
+  align-items: flex-start;
+  padding-left: ${({ depth }) => `calc(${depth} * 12px + 5px)`};
+  cursor: pointer;
+
+  :hover {
+    background-color: ${COLORS.HOVER_COLOR};
+  }
+`;
+
+const FileContainer = styled.div`
+  display: inline-flex;
+  width: 100%;
+  align-items: flex-start;
+  padding-left: ${({ depth }) => `calc(${depth} * 12px + 5px)`};
+`;
+
 const FolderStyled = styled.div`
   display: inline-block;
   width: inherit;
   min-width: inherit;
-  padding-left: 10px;
 `;
 
 const FolderButtonStyled = styled.div`
-  color: ${Color.font};
+  color: ${COLORS.FONT};
   width: inherit;
   min-width: inherit;
-
-  cursor: pointer;
-
-  :hover {
-    background-color: blue;
-  }
+  font-size: 15px;
+  margin-left: 5px;
 `;
 
 const FileStyled = styled.div`
-  color: ${Color.font};
-  font-size: 12px;
-  padding-left: 10px;
+  color: ${COLORS.FONT};
+  display: inline-block;
+  width: inherit;
+  min-width: inherit;
+  font-size: 14px;
+  margin-left: 5px;
 `;
 
 export default FileTree;
 
 FileTree.propTypes = {
   directory: PropTypes.string.isRequired,
+  depth: PropTypes.number.isRequired,
 };

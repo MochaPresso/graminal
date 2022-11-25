@@ -8,6 +8,7 @@ import React, {
 import styled from "styled-components";
 import Convert from "ansi-to-html";
 import PropTypes from "prop-types";
+import COLORS from "../constants/COLORS";
 import { sanitize } from "dompurify";
 import { DirectoryContextStore } from "../stores/DirectoryContext";
 
@@ -301,7 +302,7 @@ const Terminal = ({ isSideBarToggle }) => {
 
   return (
     <TerminalContainer
-      onDoubleClick={handleOnFocusSection}
+      onClick={handleOnFocusSection}
       isSideBarToggle={isSideBarToggle}
     >
       {lines?.map((value, index) => (
@@ -326,16 +327,11 @@ const Terminal = ({ isSideBarToggle }) => {
   );
 };
 
-const Color = {
-  font: "#DADBDD",
-  background: "#121212",
-};
-
 const fontWidth = 9.6;
 
 const TerminalContainer = styled.div`
   font-family: Courier New;
-  background: ${Color.background};
+  background: ${COLORS.TERMINAL_BACKGROUND};
   position: fixed;
   display: flex;
   align-items: center;
@@ -367,13 +363,13 @@ const Caret = styled.div`
   position: absolute;
   width: ${fontWidth}px;
   height: 1rem;
-  background: ${Color.font};
+  background: ${COLORS.FONT};
   opacity: 0.6;
 `;
 
 const LineStyled = styled.span`
   margin: 0;
-  color: ${Color.font};
+  color: ${COLORS.FONT};
   align-self: flex-start;
   white-space: pre-wrap;
   word-break: break-all;
