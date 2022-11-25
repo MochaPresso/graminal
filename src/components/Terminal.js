@@ -49,22 +49,39 @@ const Terminal = ({ isSideBarToggle }) => {
   const validateOutput = (data) => {
     const convert = new Convert();
 
-    if (data.includes("[?25l")) {
+    if (data.includes("\x1B[?25l(\x1B[107;97m") && data.includes("\x1B[?25h")) {
       progressBarRef.current = true;
 
+      const splitData = data.split("\x1B[?25l");
+
+      setLines((prevArray) => prevArray.slice(0, -1));
       setLines((prevArray) => [
         ...prevArray,
-        convert
-          .toHtml(data)
-          .trim()
-          .replaceAll(/(?:\?2004h)/g, ""),
+        convert.toHtml(splitData[0]).trim(),
+        convert.toHtml(splitData[1]).trim(),
+      ]);
+
+      return;
+    } else if (data.includes("\x1B[?25l(\x1B[107;97m")) {
+      progressBarRef.current = true;
+
+      setLines((prevArray) => [...prevArray, convert.toHtml(data).trim()]);
+
+      return;
+    } else if (progressBarRef.current && data.includes("\x1B[?25h")) {
+      progressBarRef.current = false;
+
+      setLines((prevArray) => prevArray.slice(0, -1));
+      setLines((prevArray) => [
+        ...prevArray,
+        convert.toHtml(data.split("\x1B[?25h")[1]).trim(),
       ]);
 
       return;
     } else if (
       progressBarRef.current &&
-      !data.includes("[100;90m") &&
-      !data.includes("[107;97m")
+      !data.includes("\x1B[100;90m") &&
+      !data.includes("\x1B[107;97m")
     ) {
       progressBarRef.current = false;
 
@@ -93,16 +110,20 @@ const Terminal = ({ isSideBarToggle }) => {
       return;
     }
 
+    const changeDirectoryRegex = (reg) => {
+      return new RegExp("^c\bcd\\s\\s*" + reg + "\\s*\x1B");
+    };
+
     if (data.includes("[?2004l")) {
-      if (data.includes("c\bcd ..\x1B")) {
+      if (changeDirectoryRegex("\\.{2}").test(data)) {
         Directory.currentDirectory.split("/").length > 2
           ? Directory.setCurrentDirectory((prevDirectory) =>
               prevDirectory.split("/").slice(0, -1).join("/"),
             )
           : Directory.setCurrentDirectory("/");
-      } else if (data.includes("c\bcd ~\x1B") || data.includes("c\bcd \x1B")) {
+      } else if (changeDirectoryRegex("~{0,1}").test(data)) {
         Directory.setCurrentDirectory(window.directory.homeDirectory());
-      } else if (data.includes("c\bcd /\x1B")) {
+      } else if (changeDirectoryRegex("\\/").test(data)) {
         Directory.setCurrentDirectory("/");
       } else if (data.includes("c\bcd ") && !data.includes("cd: no such")) {
         Directory.setCurrentDirectory(
@@ -117,6 +138,10 @@ const Terminal = ({ isSideBarToggle }) => {
         data.trim().split("\x1B[?2004l")[1] !== ""
           ? data.trim().split("\x1B[?2004l")[1]
           : "";
+    }
+
+    if (data.includes("\x1B[2J\x1B[3J\x1B[H")) {
+      setLines([]);
     }
 
     if (data.includes("\x1B[m\x1B[m\x1B[m\x1B[J")) {
@@ -276,7 +301,7 @@ const Terminal = ({ isSideBarToggle }) => {
 
   return (
     <TerminalContainer
-      onClick={handleOnFocusSection}
+      onDoubleClick={handleOnFocusSection}
       isSideBarToggle={isSideBarToggle}
     >
       {lines?.map((value, index) => (
