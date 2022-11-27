@@ -26,13 +26,13 @@ const FileTree = ({ directory, depth }) => {
       {files &&
         files.map((entry) =>
           entry.type === "directory" ? (
-            <FolderStyled key={entry.name}>
+            <FolderContainer key={entry.name}>
               <ContextMenuArea
                 directory={`${directory}/${entry.name}`}
                 existJsonFile={entry.existJsonFile}
                 scriptsList={entry.scriptsList}
               >
-                <FolderContainer depth={depth}>
+                <FolderStyled depth={depth}>
                   {showNested[entry.name] ? (
                     <FaFolderOpen size={16} color={COLORS.FONT} />
                   ) : (
@@ -44,7 +44,7 @@ const FileTree = ({ directory, depth }) => {
                   >
                     {entry.name}
                   </FolderButtonStyled>
-                </FolderContainer>
+                </FolderStyled>
               </ContextMenuArea>
               {showNested[entry.name] && (
                 <FileTree
@@ -52,13 +52,11 @@ const FileTree = ({ directory, depth }) => {
                   depth={depth + 1}
                 />
               )}
-            </FolderStyled>
+            </FolderContainer>
           ) : (
-            <FileContainer depth={depth}>
+            <FileContainer key={entry.name} depth={depth}>
               <FaFile size={13.5} color={COLORS.FONT} />
-              <FileStyled key={entry.name} depth={depth}>
-                {entry.name}
-              </FileStyled>
+              <FileStyled depth={depth}>{entry.name}</FileStyled>
             </FileContainer>
           ),
         )}
@@ -73,6 +71,12 @@ const Container = styled.div`
 `;
 
 const FolderContainer = styled.div`
+  display: inline-block;
+  width: inherit;
+  min-width: inherit;
+`;
+
+const FolderStyled = styled.div`
   display: inline-flex;
   width: 100%;
   align-items: flex-start;
@@ -84,25 +88,19 @@ const FolderContainer = styled.div`
   }
 `;
 
-const FileContainer = styled.div`
-  display: inline-flex;
-  width: 100%;
-  align-items: flex-start;
-  padding-left: ${({ depth }) => `calc(${depth} * 12px + 5px)`};
-`;
-
-const FolderStyled = styled.div`
-  display: inline-block;
-  width: inherit;
-  min-width: inherit;
-`;
-
 const FolderButtonStyled = styled.div`
   color: ${COLORS.FONT};
   width: inherit;
   min-width: inherit;
   font-size: 15px;
   margin-left: 5px;
+`;
+
+const FileContainer = styled.div`
+  display: inline-flex;
+  width: 100%;
+  align-items: flex-start;
+  padding-left: ${({ depth }) => `calc(${depth} * 12px + 5px)`};
 `;
 
 const FileStyled = styled.div`

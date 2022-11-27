@@ -1,10 +1,21 @@
-const { app, BrowserWindow, Menu, MenuItem, ipcMain } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  MenuItem,
+  ipcMain,
+  nativeImage,
+} = require("electron");
 const isDev = require("electron-is-dev");
 const path = require("path");
 const os = require("os");
 const pty = require("node-pty");
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "zsh";
+
+const image = nativeImage.createFromPath(
+  path.join(__dirname, "../src/images/icons/512x512.png"),
+);
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -16,6 +27,7 @@ const createWindow = () => {
       nodeIntegration: true,
       preload: path.join(__dirname, "preload.js"),
     },
+    icon: path.join(__dirname, "../src/images/icons/512x512.png"),
   });
 
   const menu = Menu.getApplicationMenu();
@@ -37,6 +49,7 @@ const createWindow = () => {
   menu.items.find((item) => item.role === "help").visible = false;
 
   const viewMenu = menu.items.find((item) => item.label === "View");
+
   viewMenu.submenu.items.find((item) => item.role === "reload").visible = false;
 
   Menu.setApplicationMenu(menu);
@@ -142,6 +155,14 @@ const createWindow = () => {
     send(data);
   });
 };
+
+app.dock.setIcon(image);
+
+app.setAboutPanelOptions({
+  applicationName: "GRAMINAL",
+  applicationVersion: "Version",
+  version: "0.9.1",
+});
 
 app.whenReady().then(() => {
   createWindow();
