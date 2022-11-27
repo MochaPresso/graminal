@@ -59,7 +59,6 @@ const createWindow = () => {
       ? "http://localhost:3000"
       : `file://${path.join(__dirname, "../build/index.html")}`,
   );
-  mainWindow.webContents.openDevTools();
   mainWindow.focus();
   mainWindow.webContents.on("before-input-event", (event, input) => {
     if (input.meta && input.key.toLowerCase() === "r") {

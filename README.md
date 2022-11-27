@@ -1,5 +1,9 @@
 # Graminal
 
+<p align="center">
+  <img src="readme_assets/title_image.png" alt="drawing" width="600"/>
+</p>
+
 ## 프로젝트 소개
 
 Graminal은 기존의 텍스트 입출력 환경만 있는 CLI(Command Line Interface) 터미널에 GUI(Graphical User Interface) 요소를 더한 터미널 프로그램입니다. 사용자는 Graminal로 터미널 인터페이스를 이용함과 동시에 SideBar, 마우스 우클릭 등의 GUI 요소를 통해 더욱 편하게 터미널을 사용할 수 있습니다.
@@ -36,15 +40,28 @@ Graminal은 기존의 텍스트 입출력 환경만 있는 CLI(Command Line Inte
 
 기존의 CLI 터미널 인터페이스와 유사한 사용자 경험을 얻을 수 있습니다.
 
-![](readme_assets/terminal_image.png)
+<img src="readme_assets/terminal_image.png" alt="drawing"/>
 
 상단바의 메뉴, 또는 단축키 Command + T를 눌러 사이드바를 열 수 있습니다. 사이드바에서는 현재 Directory 경로에 대한 Tree View를 볼 수 있으며, context menu를 통해 해당 폴더로 이동할 수 있습니다.
 
-![](readme_assets/sidebar_image.png)
+<img src="readme_assets/sidebar_image.png" alt="drawing"/>
 
 폴더가 프로젝트 폴더일 경우, context menu에서 npm install과 scripts에 등록된 명령어를 사용할 수 있습니다.
 
-![](readme_assets/sidebar_context_menu.png)
+<img src="readme_assets/sidebar_context_menu.png" alt="drawing"/>
+
+## 설치 및 실행
+
+```jsx
+npm install
+
+// electron과 Node.js의 버전을 맞추기 위함
+./node_modules/.bin/electron-rebuild
+
+npm start
+```
+
+Electron 배포 오류로 인해 Electron Application은 추후 추가할 예정입니다.
 
 ## 어려웠던 점
 
@@ -61,3 +78,7 @@ shell 출력값을 받아오는 과정에서 출력값이 균일하게 반환되
 사이드바에 현재 터미널의 Directory에 대한 Tree View를 만들고자 했습니다. Global로 저장되어 있는 Directory의 경로를 이용해 Directory 안에 있는 폴더와 파일을 읽어오고, 읽어온 폴더를 클릭했을 때 다시 해당 폴더에 대한 하위 폴더와 파일을 읽어와서 화면에 출력해야 했습니다. 현재 Directory의 폴더와 파일을 불러와서 출력하는 과정은 크게 어려움이 없었지만, 폴더를 눌렀을 때 해당 폴더의 하위 폴더들을 나타내는 방법을 찾지 못해 어려움을 겪었습니다.
 
 문제를 해결하기 위해 tree view를 출력하는 컴포넌트 자체를 재귀로 동작하도록 만들었습니다. 폴더를 클릭했을 때 해당 폴더가 클릭된 상태 여부를 state로 저장한 뒤, true인 폴더들에 대해서 tree view 컴포넌트를 출력하도록 만들었습니다. 더불어 컴포넌트에 depth를 매개변수로 전달해서 depth 값에 따라 padding-left 값을 더해 하위 폴더로 내려가도 해당 폴더의 상위 폴더를 알 수 있도록 만들었습니다.
+
+## 회고
+
+아이디어를 결정하고, 프로젝트를 혼자서 진행하면서 ‘이걸 혼자서 만들 수 있을까’ 라는 생각이 끊임없이 들었습니다. 스스로의 실력에 대해 많이 부족하다는 것을 알고 있었기에 더욱 그러한 생각을 지울 수 없었습니다. 하지만 부족하더라도 계획했던 작업을 하나 둘씩 해결하고, 프로젝트가 어느정도 모양새를 갖춰가면서 코드로 무언가를 할 수 있다는 자신감을 얻을 수 있었습니다. 아직은 많이 부족한 실력이지만, 앞으로 이러한 배움과 경험하는 과정을 통해 개발자로서 더욱 성장하고 싶습니다.
