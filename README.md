@@ -1,7 +1,7 @@
 # Graminal
 
 <p align="center">
-  <img src="readme_assets/title_image.png" alt="drawing" width="600"/>
+  <img src="readme_assets/title_image.png" alt="drawing" width="500"/>
 </p>
 
 ## 프로젝트 소개
@@ -38,30 +38,32 @@ Graminal은 기존의 텍스트 입출력 환경만 있는 CLI(Command Line Inte
 
 ## 기능 소개
 
-기존의 CLI 터미널 인터페이스와 유사한 사용자 경험을 얻을 수 있습니다.
+<details>
+  <summary>기존의 CLI 터미널 인터페이스와 유사한 사용자 경험을 얻을 수 있습니다.</summary>
+  
+https://user-images.githubusercontent.com/81922977/208599890-e263342e-c92e-4b5e-abe5-e71ea7680f62.mov
 
-<img src="readme_assets/terminal_image.png" alt="drawing"/>
+</details>
 
-상단바의 메뉴, 또는 단축키 Command + T를 눌러 사이드바를 열 수 있습니다. 사이드바에서는 현재 Directory 경로에 대한 Tree View를 볼 수 있으며, context menu를 통해 해당 폴더로 이동할 수 있습니다.
+<details>
+  <summary>상단바의 메뉴, 또는 단축키 Command + T를 눌러 사이드바를 열 수 있습니다. <br/>&emsp;사이드바에서는 현재 Directory 경로에 대한 Tree View를 볼 수 있으며, context menu를 통해 해당 폴더로 이동할 수 있습니다.</summary>
+  
+https://user-images.githubusercontent.com/81922977/208601365-9552bfa3-f5d0-47c9-8cc9-accc55a4713b.mov
 
-<img src="readme_assets/sidebar_image.png" alt="drawing"/>
+</details>
 
-폴더가 프로젝트 폴더일 경우, context menu에서 npm install과 scripts에 등록된 명령어를 사용할 수 있습니다.
+<details>
+  <summary>폴더가 프로젝트 폴더일 경우, context menu에서 npm install과 scripts에 등록된 npm 명령어를 사용할 수 있습니다.</summary>
+  
 
-<img src="readme_assets/sidebar_context_menu.png" alt="drawing"/>
+https://user-images.githubusercontent.com/81922977/208601920-5192a554-62ef-45e1-8d04-1f6a68964620.mp4
+
+
+</details>
 
 ## 설치 및 실행
 
-```jsx
-npm install
-
-// electron과 Node.js의 버전을 맞추기 위함
-./node_modules/.bin/electron-rebuild
-
-npm start
-```
-
-Electron 배포 오류로 인해 Electron Application은 추후 추가할 예정입니다.
+[Release Page](https://github.com/MochaPresso/graminal/releases)에서 dmg 파일을 다운로드 받아 응용프로그램으로 설치한 뒤 실행합니다.
 
 ## 어려웠던 점
 
