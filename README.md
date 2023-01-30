@@ -73,7 +73,8 @@ https://user-images.githubusercontent.com/81922977/208601920-5192a554-62ef-45e1-
 
 ## 설치 및 실행
 
-[Release Page](https://github.com/MochaPresso/graminal/releases)에서 dmg 파일을 다운로드 받아 응용프로그램으로 설치한 뒤 실행합니다.
+[Release Page](https://github.com/MochaPresso/graminal/releases)에서 dmg 파일을 다운로드 받아 응용프로그램으로 설치한 뒤 실행합니다.</br>
+(현재 프로젝트 배포 진행 중에 있어 다운로드하여도 아직 프로젝트 실행은 불가합니다. 향후 업데이트 예정입니다.)
 
 ## 챌린지
 
